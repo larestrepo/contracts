@@ -14,14 +14,18 @@ pub fn validate_create(
   transaction: Transaction,
 ) -> Bool {
   expect
-    list.any(
-      transaction.inputs,
-      fn(
-        /// Validate that the transaction has the expected utxo
-        input,
-      ) {
-        input.output_reference == params.main_protocol_tx_out_ref
-      },
+    error_if_false(
+      @"Transaction does not have the expected utxo",
+      list.any(
+        transaction.inputs,
+        fn(
+          // the protocol params
+          /// Validate that the transaction has the expected utxo which means
+          input,
+        ) {
+          input.output_reference == params.main_protocol_tx_out_ref
+        },
+      ),
     )
   expect None =
     get_protocol_from_inputs(
@@ -46,6 +50,7 @@ pub fn validate_create(
     ) == 1,
     !list.is_empty(protocolDatum.admin_wallets),
     !bytearray.is_empty(protocolDatum.oracle_policy_id),
+    list.length(protocolDatum.admin_wallets) > 0,
     protocolDatum.commission_percent > 0,
   }
 }
@@ -116,5 +121,15 @@ fn extract_protocol_datum(output: Output) -> Option<MainProtocolDatum> {
       Some(datum)
     }
     _ -> None
+  }
+}
+
+// If a test fails, immediately crash the script with an error message. This is useful
+// when some side-effect needs to be verified before continuing with the main function.
+pub fn error_if_false(msg: String, predicate: Bool) {
+  if !predicate {
+    fail msg
+  } else {
+    predicate
   }
 }
