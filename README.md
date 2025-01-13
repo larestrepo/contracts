@@ -4,8 +4,6 @@
 
 This repo is the smart contract repository that allows the tokenization of carbon credit projects in early stages as well as tokenization of certified carbon credits. 
 
-***
-
 ## Example use case
 
 Project X is a hypothetical project that has undergone initial validation phases conducted by consultants. These consultants evaluate the project from technical and financial perspectives. The result is an estimation of the retention capacity or CO2eq captured over multiple periods, with a horizon of up to 20 years. Every five years, a validation is conducted to confirm the quantity effectively retained. This value is then compared to the initial estimate to identify potential biases.
@@ -55,8 +53,74 @@ As briefly mentioned earlier, the application employs two types of FT tokens: gr
 
 ### Protocol type contracts
 
-- **Protocol contracts**: Manage protocol parameters for easy on-chain access and detailed project information.
-- **Main protocol**: Contains information in one UTXO, such as AdminWallet, OracleId, and the percentage commission allocated to beneficiaries during token purchases.
+Manage protocol parameters for easy on-chain access and detailed project information.
+
+***
+
+- **Main protocol**: Contains information in one UTXO, such as AdminWallet, OracleId, and the percentage commission allocated to beneficiaries during token purchases. This is generic information related to the main protocol stored in a datum for easy access of the low level contracts.
+
+#### Parameters Info: 
+
+```typescript
+/// Protocol parameters to create unique contract addresses based on utxo reference and token name
+pub type MainProtocolParams {
+  /// OutputReference that must be consumed when minting the Main Protocol ID token
+  main_protocol_tx_out_ref: OutputReference,
+  /// Main Protocol ID token name that will be minted
+  main_protocol_id_tn: ByteArray,
+}
+```
+#### Datum Info:
+
+```typescript
+/// Datum: Admin and protocol details
+pub type MainProtocolDatum {
+  /// List of admin wallets that can update protocol parameters
+  admin_wallets: List<VerificationKeyHash>,
+  /// Oracle policy ID that will be used to refer to prices and other info
+  oracle_policy_id: PolicyId,
+  /// Commission percentage that will be charged on token purchases
+  commission_percent: Int,
+}
+```
+#### Reference Info: 
+
+None
+
+#### Redeemer Actions:
+
+```typescript
+/// Redeemer: Admin actions
+pub type MainProtocolRedeemer {
+  /// Initialize protocol by minting Protocol ID token
+  CreateProtocol
+  /// Update protocol parameters while maintaining Protocol ID token
+  UpdateProtocol
+}
+```
+#### Validations:
+
+When minting (Redeemer action is ***CreateProtocol***):
+
+1. Transaction must have the expected utxo in inputs
+2. The protocol should not be in the inputs as token and datum
+3. The protocol should exist in outputs
+4. Only one NFT token should be minted
+5. Datum validation:
+    1. Admin wallets should not be empty (at least 1 admin wallet)
+    2. Oracle Policy ID should not be empty
+    3. Commission percent should be higher than zero
+
+When spending (Redeemer action is ***UpdateProtocol***):
+
+1. Make sure that no protocol is being created (CreateProtocol not allowed)
+2. Only one protocol should be in the inputs
+3. Only one protocol should be in the outputs
+4. Only one admin wallet should be allowed to update
+5. New protocol parameters must be valid (Datum validation)
+
+***
+
 - **Project protocol**: Contains project details in a datum, including project ID, description, NFT project identifier, project state (initialized, distributed, certified, closed), and emission dates. Unique addresses are generated for each project.
 - **Oracle protocol**: Contains one UTXO per project with an NFT for project identification. The datum includes token prices in ADA, USD, and COP, which are updated periodically (e.g., daily).
 

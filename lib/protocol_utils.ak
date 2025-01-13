@@ -19,8 +19,7 @@ pub fn validate_create(
       list.any(
         transaction.inputs,
         fn(
-          // the protocol params
-          /// Validate that the transaction has the expected utxo which means
+          /// Validate that the transaction has the expected utxo
           input,
         ) {
           input.output_reference == params.main_protocol_tx_out_ref
@@ -41,7 +40,6 @@ pub fn validate_create(
       params.main_protocol_id_tn,
       1,
     )
-
   and {
     quantity_of(
       transaction.mint,
@@ -50,11 +48,16 @@ pub fn validate_create(
     ) == 1,
     !list.is_empty(protocolDatum.admin_wallets),
     !bytearray.is_empty(protocolDatum.oracle_policy_id),
-    list.length(protocolDatum.admin_wallets) > 0,
     protocolDatum.commission_percent > 0,
   }
 }
 
+/// Validate that same protocol is not consumed in the inputs
+/// Validate that the protocol is created in the outputs and only one NFT token is minted
+/// Multiple validations:
+/// - Admin wallets must not be empty
+/// - Oracle policy ID must not be empty
+/// - Commission percent must be greater than 0
 /// The protocol must not exists in the inputs
 /// The protocol must exists in the outputs and it should be only one
 /// Must mint exactly one Protocol ID token

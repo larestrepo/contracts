@@ -12,17 +12,20 @@ pub type MainProtocolParams {
   main_protocol_id_tn: ByteArray,
 }
 
-// Datum: Admin and protocol details
+/// Datum: Admin and protocol details
 pub type MainProtocolDatum {
+  /// List of admin wallets that can update protocol parameters
   admin_wallets: List<VerificationKeyHash>,
+  /// Oracle policy ID that will be used to refer to prices and other info
   oracle_policy_id: PolicyId,
+  /// Commission percentage that will be charged on token purchases
   commission_percent: Int,
 }
 
-// Redeemer: Admin actions
+/// Redeemer: Admin actions
 pub type MainProtocolRedeemer {
   /// Initialize protocol by minting Protocol ID token
   CreateProtocol
   /// Update protocol parameters while maintaining Protocol ID token
-  UpdateProtocolParams
+  UpdateProtocol
 }
