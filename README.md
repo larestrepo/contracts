@@ -203,3 +203,40 @@ When spending (Redeemer action is ***UpdateProtocol***):
 - **Community contract**: This contract holds tokens to incentivize work or initiatives from the community involved in the project. Community members are compensated with predefined amounts of tokens upon achieving clear outcomes. For example, consultants who conduct the initial feasibility study of the project and estimate its carbon credits are compensated proportionally with tokens held in this contract.
 
 - **Green contract**: Manages the green tokens that represent actual carbon credits. The contract supports actions such as listing (minting) in the marketplace, delisting (burning), buying, selling, and compensating (burning).
+
+## Trransaction Diagrams
+
+### Conventions
+
+```mermaid
+flowchart
+A[/Script Validator/]
+B("`Wallet Address
+Or
+Script Address`")
+C((mint))
+Tx[Tx]
+```
+
+### Main Protocol
+
+1. Create Protocol
+***
+```mermaid
+flowchart LR
+	Input1(Any Wallet<br>------<br>x ADA<br>protocol-utxo<br>token_name) -->|New Datum| Tx[Tx] 
+	Input2(("Mint<br>------<br>protocol NFT")) --> Tx 
+	Input3[/"Protocol Validator<br>------<br>Create protocol"/] --> Tx 
+	Tx --> Output1("Any Wallet<br>------<br>change output<br>-(xADA+fee)") 
+	Tx --> Output2(Script Address<br>------<br>1 protocol NFT+minADA<br>Datum<br>------<br>list of admin wallets<br>oracle_policy_id<br>% commission)
+```
+2. Update Protocol
+***
+```mermaid
+flowchart LR
+	Input1(Admin Wallet<br>------<br>x ADA) -->|New Datum| Tx[Tx]
+	Input2[/"Protocol Validator<br>------<br>Update protocol"/] --> Tx
+  Input3(Script Address<br>-------<br>1 protocol NFT+minADA) -->|Old Datum| Tx
+	Tx --> Output1("Admin Wallet<br>------<br>change output<br>-(xADA+fee)") 
+	Tx --> Output2(Script Address<br>------<br>1 protocol NFT+minADA<br>New Datum<br>------<br>list of admin wallets<br>oracle_policy_id<br>% commission)
+```
