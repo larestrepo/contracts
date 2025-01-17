@@ -52,6 +52,64 @@ pub fn validate_create(
   }
 }
 
+pub fn validate_update(
+  params: MainProtocolParams,
+  protocol_policy_id: PolicyId,
+  protocolDatum: MainProtocolDatum,
+  transaction: Transaction,
+) -> Bool {
+  // Make sure that no protocol is being created (CreateProtocol not allowed)
+  // Only one protocol should be in the inputs
+  // Only one protocol should be in the outputs
+  // Only one admin wallet should be allowed to update
+  // New protocol parameters must be valid (Datum validation)
+
+  expect Some((utxoInput, _)) =
+    get_protocol_from_inputs(
+      transaction,
+      protocol_policy_id,
+      params.main_protocol_id_tn,
+      1,
+    )
+  expect Some((utxoOutput, _)) =
+    get_protocol_from_outputs(
+      transaction,
+      protocol_policy_id,
+      params.main_protocol_id_tn,
+      1,
+    )
+  expect
+    error_if_false(
+      @"Admin wallet not found in the transaction",
+      is_admin_auth(transaction, protocolDatum),
+    )
+  expect
+    error_if_false(
+      @"Transaction cannot mint during UpdateProtocol",
+      quantity_of(
+        transaction.mint,
+        protocol_policy_id,
+        params.main_protocol_id_tn,
+      ) == 0,
+    )
+  // Value must remain unchanged
+  expect
+    error_if_false(
+      @"Output value must match input value",
+      utxoInput.value == utxoOutput.value,
+    )
+  and {
+    !list.is_empty(protocolDatum.admin_wallets),
+    !bytearray.is_empty(protocolDatum.oracle_policy_id),
+  }
+  // protocolDatum.commission_percent > 0,
+}
+
+/// Validate that the utxo to update is consumed in the transaction
+/// Validate that the utxo updated is being created and that the token is transfered
+/// Validate that some admin in the list has signed the transaction
+/// Validate that there's no minting during the transaction
+/// Validate that the new datum is valid
 /// Validate that same protocol is not consumed in the inputs
 /// Validate that the protocol is created in the outputs and only one NFT token is minted
 /// Multiple validations:
@@ -125,6 +183,19 @@ fn extract_protocol_datum(output: Output) -> Option<MainProtocolDatum> {
     }
     _ -> None
   }
+}
+
+fn is_admin_auth(
+  transaction: Transaction,
+  protocolDatum: MainProtocolDatum,
+) -> Bool {
+  let is_admin_signed =
+    list.any(
+      protocolDatum.admin_wallets,
+      fn(admin) { list.has(transaction.extra_signatories, admin) },
+    )
+
+  is_admin_signed
 }
 
 // If a test fails, immediately crash the script with an error message. This is useful

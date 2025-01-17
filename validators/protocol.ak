@@ -1,26 +1,37 @@
+use aiken/crypto.{ScriptHash}
 // 1. Main Protocol Contract
 
 use cardano/assets.{PolicyId}
 use cardano/transaction.{Transaction}
-use protocol_utils.{validate_create}
-use types.{CreateProtocol, MainProtocolParams, MainProtocolRedeemer}
+use protocol_utils.{validate_create, validate_update}
+use types.{
+  CreateProtocol, MainProtocolDatum, MainProtocolParams, MainProtocolRedeemer,
+  UpdateProtocol,
+}
 
 validator main_protocol_validator(params: MainProtocolParams) {
-  //   spend(
-  //       datum: Option<types.MainProtocolDatum>,
-  //       redeemer: types.MainProtocolRedeemer,
-  //       script_hash: ScriptHash,
-  //       transaction: Transaction,
-  //   ) {
-
-  //       expect Some(protocolDatum: MainProtocolDatum) = datum
-  //       when redeemer is {
-  //           CreateProtocol -> False
-  //       }
-  //       todo @"spend logic goes here"
-
-  //   assert(main_protocol_datum.commission_percent >= 0, "Invalid commission percentage")
-  // }
+  spend(
+    datum: Option<MainProtocolDatum>,
+    redeemer: MainProtocolRedeemer,
+    script_hash: ScriptHash,
+    transaction: Transaction,
+  ) {
+    let protocol_policy_id = script_hash
+    when datum is {
+      Some(protocolDatum) ->
+        when redeemer is {
+          CreateProtocol -> False
+          UpdateProtocol ->
+            validate_update(
+              params,
+              protocol_policy_id,
+              protocolDatum,
+              transaction,
+            )
+        }
+      None -> False
+    }
+  }
 
   mint(
     redeemer: MainProtocolRedeemer,
